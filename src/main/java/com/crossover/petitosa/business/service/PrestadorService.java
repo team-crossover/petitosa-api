@@ -3,6 +3,7 @@ package com.crossover.petitosa.business.service;
 import com.crossover.petitosa.business.entity.Endereco;
 import com.crossover.petitosa.business.entity.Prestador;
 import com.crossover.petitosa.business.entity.Usuario;
+import com.crossover.petitosa.business.enums.RoleUsuario;
 import com.crossover.petitosa.data.repository.PrestadorRepository;
 import com.crossover.petitosa.presentation.dto.NovoPrestadorDto;
 import com.crossover.petitosa.presentation.dto.PrestadorDto;
@@ -33,6 +34,7 @@ public class PrestadorService extends CrudService<Prestador, Long, PrestadorRepo
         Usuario usuario = Usuario.builder()
                 .email(novoPrestadorDto.getEmail())
                 .senha(novoPrestadorDto.getSenha())
+                .role(RoleUsuario.PRESTADOR)
                 .build();
         usuario = usuarioService.save(usuario);
 

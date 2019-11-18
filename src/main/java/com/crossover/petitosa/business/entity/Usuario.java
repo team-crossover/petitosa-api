@@ -1,11 +1,13 @@
 package com.crossover.petitosa.business.entity;
 
+import com.crossover.petitosa.business.enums.RoleUsuario;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 
 import javax.persistence.*;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 
 @Data
 @Builder
@@ -27,6 +29,9 @@ public class Usuario {
 
     @NotBlank
     private String senha;
+
+    @NotNull
+    private RoleUsuario role;
 
     // -----------
 

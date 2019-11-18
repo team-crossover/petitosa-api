@@ -3,6 +3,7 @@ package com.crossover.petitosa.business.service;
 import com.crossover.petitosa.business.entity.Contratante;
 import com.crossover.petitosa.business.entity.Endereco;
 import com.crossover.petitosa.business.entity.Usuario;
+import com.crossover.petitosa.business.enums.RoleUsuario;
 import com.crossover.petitosa.data.repository.ContratanteRepository;
 import com.crossover.petitosa.presentation.dto.ContratanteDto;
 import com.crossover.petitosa.presentation.dto.NovoContratanteDto;
@@ -30,6 +31,7 @@ public class ContratanteService extends CrudService<Contratante, Long, Contratan
         Usuario usuario = Usuario.builder()
                 .email(novoContratanteDto.getEmail())
                 .senha(novoContratanteDto.getSenha())
+                .role(RoleUsuario.CONTRATANTE)
                 .build();
         usuario = usuarioService.save(usuario);
 
