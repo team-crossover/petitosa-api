@@ -1,5 +1,6 @@
 package com.crossover.petitosa.presentation.dto;
 
+import com.crossover.petitosa.business.entity.Animal;
 import com.crossover.petitosa.business.entity.Contratante;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.annotations.ApiModelProperty;
@@ -11,6 +12,8 @@ import lombok.NoArgsConstructor;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import java.time.LocalDate;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Data
 @Builder
@@ -21,6 +24,7 @@ public class ContratanteDto {
     @NotNull
     private Long id;
 
+    @NotNull
     private Long idUsuario;
 
     @NotBlank
@@ -40,6 +44,13 @@ public class ContratanteDto {
     @NotNull
     private EnderecoDto endereco;
 
+    private String imgPerfil;
+
+    @NotNull
+    private CartaoCreditoDto cartaoCredito;
+
+    private List<Long> idsAnimais;
+
     public static ContratanteDto fromContratante(Contratante contratante) {
         return ContratanteDto.builder()
                 .id(contratante.getId())
@@ -49,6 +60,9 @@ public class ContratanteDto {
                 .genero(contratante.getGenero())
                 .dataNascimento(contratante.getDataNascimento())
                 .endereco(EnderecoDto.fromEndereco(contratante.getEndereco()))
+                .imgPerfil(contratante.getImgPerfil())
+                .cartaoCredito(CartaoCreditoDto.fromCartao(contratante.getCartaoCredito()))
+                .idsAnimais(contratante.getAnimais().stream().map(Animal::getId).collect(Collectors.toList()))
                 .build();
     }
 

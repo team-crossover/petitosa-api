@@ -40,7 +40,7 @@ public class PrestadorDto {
     private LocalDate dataNascimento;
 
     @Size(max = 1000)
-    @ApiModelProperty(example = "Adoro animais")
+    @ApiModelProperty(example = "Adoro servicosPorAnimais")
     private String descricao;
 
     @NotNull
@@ -60,6 +60,11 @@ public class PrestadorDto {
     @ApiModelProperty(example = "[20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20]")
     private Double[] precos = new Double[15];
 
+    private String imgPerfil;
+
+    @NotNull
+    private ContaBancariaDto contaBancaria;
+
     public static PrestadorDto fromPrestador(Prestador prestador) {
         return PrestadorDto.builder()
                 .id(prestador.getId())
@@ -72,6 +77,8 @@ public class PrestadorDto {
                 .servicosPrestados(prestador.getServicosPrestados().toArray(new Boolean[0]))
                 .precos(prestador.getPrecos().toArray(new Double[0]))
                 .endereco(EnderecoDto.fromEndereco(prestador.getEndereco()))
+                .imgPerfil(prestador.getImgPerfil())
+                .contaBancaria(ContaBancariaDto.fromConta(prestador.getContaBancaria()))
                 .build();
     }
 

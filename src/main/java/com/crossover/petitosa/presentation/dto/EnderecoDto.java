@@ -18,6 +18,7 @@ import javax.validation.constraints.NotNull;
 @AllArgsConstructor
 public class EnderecoDto {
 
+    @NotNull
     private Long id;
 
     @ApiModelProperty(example = "GO")

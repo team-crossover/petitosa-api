@@ -8,7 +8,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 
+import javax.transaction.Transactional;
+
 @Service
+@Transactional
 public class EnderecoService extends CrudService<Endereco, Long, EnderecoRepository> {
 
     @Autowired
@@ -33,6 +36,9 @@ public class EnderecoService extends CrudService<Endereco, Long, EnderecoReposit
                 Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
                         Math.sin(dLng / 2) * Math.sin(dLng / 2);
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        return (float) (earthRadius * c);
+        double d = earthRadius * c;
+
+        // round up to nearest multiple of 100 and dont allow below 0
+        return Math.max(0.0, Math.ceil(d / 100.0) * 100.0);
     }
 }

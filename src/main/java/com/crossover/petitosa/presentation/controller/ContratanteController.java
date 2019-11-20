@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpClientErrorException;
 
 import javax.validation.Valid;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 public class ContratanteController {
@@ -23,6 +25,12 @@ public class ContratanteController {
     @ApiOperation("Cadastrar novo contratante")
     private ContratanteDto add(@RequestBody @Valid NovoContratanteDto novoContratanteDto) {
         return contratanteService.add(novoContratanteDto);
+    }
+
+    @GetMapping("/api/v1/contratantes")
+    @ApiOperation("Obtém dados de todos contratantes")
+    private List<ContratanteDto> getAll() {
+        return contratanteService.findAll().stream().map(ContratanteDto::fromContratante).collect(Collectors.toList());
     }
 
     @PostMapping("/api/v1/contratante/{id}")

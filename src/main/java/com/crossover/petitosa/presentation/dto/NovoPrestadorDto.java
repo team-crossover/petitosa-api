@@ -25,7 +25,7 @@ public class NovoPrestadorDto {
     @ApiModelProperty(example = "jonas@exemplo.com")
     private String email;
 
-    @ApiModelProperty(example = "123456", notes = "Obrigatório ao cadastrar novo prestador, opcional ao editar prestador existente")
+    @ApiModelProperty(example = "123456", notes = "Obrigatório ao add novo prestador, opcional ao update prestador existente")
     private String senha;
 
     @NotBlank
@@ -40,7 +40,7 @@ public class NovoPrestadorDto {
     private LocalDate dataNascimento;
 
     @Size(max = 1000)
-    @ApiModelProperty(example = "Adoro animais")
+    @ApiModelProperty(example = "Adoro servicosPorAnimais")
     private String descricao;
 
     @NotNull
@@ -60,4 +60,10 @@ public class NovoPrestadorDto {
     @ApiModelProperty(example = "[20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20]")
     private Double[] precos = new Double[15];
 
+    @ApiModelProperty(notes = "Opcional, se tiver em branco será ignorado")
+    @Size(max = 10485760) // 10 MB
+    private String imgPerfil;
+
+    @NotNull
+    private ContaBancariaDto contaBancaria;
 }

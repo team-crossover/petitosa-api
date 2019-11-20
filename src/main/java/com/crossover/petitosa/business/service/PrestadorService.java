@@ -1,8 +1,6 @@
 package com.crossover.petitosa.business.service;
 
-import com.crossover.petitosa.business.entity.Endereco;
-import com.crossover.petitosa.business.entity.Prestador;
-import com.crossover.petitosa.business.entity.Usuario;
+import com.crossover.petitosa.business.entity.*;
 import com.crossover.petitosa.business.enums.RoleUsuario;
 import com.crossover.petitosa.data.repository.PrestadorRepository;
 import com.crossover.petitosa.presentation.dto.NovoPrestadorDto;
@@ -12,10 +10,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 
+import javax.transaction.Transactional;
 import java.util.ArrayList;
 import java.util.Arrays;
 
 @Service
+@Transactional
 public class PrestadorService extends CrudService<Prestador, Long, PrestadorRepository> {
 
     @Autowired
@@ -24,7 +24,10 @@ public class PrestadorService extends CrudService<Prestador, Long, PrestadorRepo
     @Autowired
     private EnderecoService enderecoService;
 
-    public PrestadorDto cadastrar(NovoPrestadorDto novoPrestadorDto) {
+    @Autowired
+    private ContaBancariaService contaService;
+
+    public PrestadorDto add(NovoPrestadorDto novoPrestadorDto) {
 
         if (usuarioService.findByEmail(novoPrestadorDto.getEmail()) != null)
             throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, "E-mail já cadastrado");
@@ -42,6 +45,14 @@ public class PrestadorService extends CrudService<Prestador, Long, PrestadorRepo
         endereco.setLogradouro(novoPrestadorDto.getEndereco().getLogradouro());
         endereco = enderecoService.save(endereco);
 
+        ContaBancaria conta = ContaBancaria.builder()
+                .tipo(novoPrestadorDto.getContaBancaria().getTipo())
+                .numero(novoPrestadorDto.getContaBancaria().getNumero())
+                .digito(novoPrestadorDto.getContaBancaria().getDigito())
+                .agencia(novoPrestadorDto.getContaBancaria().getAgencia())
+                .build();
+        conta = contaService.save(conta);
+
         Prestador prestador = Prestador.builder()
                 .usuario(usuario)
                 .nome(novoPrestadorDto.getNome())
@@ -51,13 +62,15 @@ public class PrestadorService extends CrudService<Prestador, Long, PrestadorRepo
                 .servicosPrestados(Arrays.asList(novoPrestadorDto.getServicosPrestados()))
                 .precos(Arrays.asList(novoPrestadorDto.getPrecos()))
                 .endereco(endereco)
+                .imgPerfil(novoPrestadorDto.getImgPerfil())
+                .contaBancaria(conta)
                 .build();
         prestador = save(prestador);
 
         return PrestadorDto.fromPrestador(prestador);
     }
 
-    public PrestadorDto editar(Long id, NovoPrestadorDto novosDadosDto) {
+    public PrestadorDto update(Long id, NovoPrestadorDto novosDadosDto) {
         Prestador prestador = findById(id);
         if (prestador == null)
             throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, "ID não encontrado");
@@ -75,7 +88,17 @@ public class PrestadorService extends CrudService<Prestador, Long, PrestadorRepo
         endereco.setId(prestador.getEndereco().getId());
         endereco = enderecoService.save(endereco);
 
-        // Atualiza demais dados
+        // Atualiza conta
+        ContaBancaria conta = ContaBancaria.builder()
+                .id(prestador.getContaBancaria().getId())
+                .tipo(prestador.getContaBancaria().getTipo())
+                .numero(prestador.getContaBancaria().getNumero())
+                .digito(prestador.getContaBancaria().getDigito())
+                .agencia(prestador.getContaBancaria().getAgencia())
+                .build();
+        conta = contaService.save(conta);
+
+        // Atualiza demais dados (imagem apenas se presente)
         prestador.setUsuario(usuario);
         prestador.setNome(novosDadosDto.getNome());
         prestador.setGenero(novosDadosDto.getGenero());
@@ -84,8 +107,18 @@ public class PrestadorService extends CrudService<Prestador, Long, PrestadorRepo
         prestador.setServicosPrestados(new ArrayList(Arrays.asList(novosDadosDto.getServicosPrestados())));
         prestador.setPrecos(new ArrayList(Arrays.asList(novosDadosDto.getPrecos())));
         prestador.setEndereco(endereco);
+        if (novosDadosDto.getImgPerfil() != null && !novosDadosDto.getImgPerfil().isEmpty())
+            prestador.setImgPerfil(novosDadosDto.getImgPerfil());
+        prestador.setContaBancaria(conta);
         prestador = save(prestador);
 
         return PrestadorDto.fromPrestador(prestador);
+    }
+
+    public double calculateAvaliacaoMedia(Prestador prestador) {
+        double sum = 0.0;
+        for (Avaliacao aval : prestador.getAvaliacoes())
+            sum += aval.getNota();
+        return sum;
     }
 }

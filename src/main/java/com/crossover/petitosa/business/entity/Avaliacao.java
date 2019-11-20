@@ -6,6 +6,7 @@ import javax.persistence.*;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
+import java.time.LocalDateTime;
 
 @Data
 @Builder
@@ -19,6 +20,9 @@ public class Avaliacao {
     @Id
     @GeneratedValue
     private Long id;
+
+    @NotNull
+    private LocalDateTime data;
 
     @NotNull
     @ManyToOne

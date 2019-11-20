@@ -1,12 +1,13 @@
 package com.crossover.petitosa.business.entity;
 
+import com.crossover.petitosa.business.enums.TipoServico;
 import lombok.*;
 
 import javax.persistence.*;
-import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
-import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @Builder
@@ -14,26 +15,25 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @ToString(exclude = {})
 @Entity
-@Table(name = "comentarios")
-public class Comentario {
+@Table(name = "servicosporanimais")
+public class ServicosPorAnimal {
 
     @Id
     @GeneratedValue
     private Long id;
 
     @NotNull
-    private LocalDateTime data;
+    @ManyToOne
+    private Servico servico;
 
     @NotNull
     @ManyToOne
-    private Contratante avaliador;
+    private Animal animal;
 
+    @Builder.Default
     @NotNull
-    @ManyToOne
-    private Prestador prestador;
-
-    @NotBlank
-    @Size(max = 500)
-    private String texto;
+    @Size(min = 1)
+    @ElementCollection
+    private List<TipoServico> tiposServico = new ArrayList<>();
 
 }

@@ -6,6 +6,7 @@ import lombok.*;
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -14,7 +15,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString(exclude = {"avaliacoes", "comentarios"})
+@ToString(exclude = {"avaliacoes", "comentarios", "animais"})
 @Entity
 @Table(name = "contratantes")
 public class Contratante {
@@ -38,7 +39,20 @@ public class Contratante {
     @OneToOne(orphanRemoval = true)
     private Endereco endereco;
 
+    @Basic(fetch = FetchType.LAZY)
+    @Size(max = 10485760) // 10 MB
+    private String imgPerfil;
+
+    @NotNull
+    @OneToOne(orphanRemoval = true)
+    private CartaoCredito cartaoCredito;
+
     // -----------
+
+    @Builder.Default
+    @JsonIgnore
+    @OneToMany(mappedBy = "dono")
+    private List<Animal> animais = new ArrayList<>();
 
     @Builder.Default
     @JsonIgnore
@@ -49,6 +63,5 @@ public class Contratante {
     @JsonIgnore
     @OneToMany(mappedBy = "avaliador")
     private List<Comentario> comentarios = new ArrayList<>();
-
 
 }

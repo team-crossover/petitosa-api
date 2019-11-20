@@ -53,6 +53,14 @@ public class Prestador {
     @ElementCollection
     private List<Double> precos = new ArrayList<>();
 
+    @Basic(fetch = FetchType.LAZY)
+    @Size(max = 10485760) // 10 MB
+    private String imgPerfil;
+
+    @NotNull
+    @OneToOne(orphanRemoval = true)
+    private ContaBancaria contaBancaria;
+
     // ------------
 
     @Builder.Default
