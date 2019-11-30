@@ -6,6 +6,7 @@ import lombok.*;
 import javax.persistence.ElementCollection;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
+import java.math.BigDecimal;
 
 @Data
 @Builder
@@ -28,6 +29,6 @@ public class FiltroServicoDto {
     private Double distanciaMaxima;
 
     @ApiModelProperty(notes = "Em reais", example = "79.99")
-    private Double precoTotalMaximo;
+    private BigDecimal precoTotalMaximo;
 
 }

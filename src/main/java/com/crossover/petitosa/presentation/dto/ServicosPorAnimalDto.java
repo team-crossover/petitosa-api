@@ -27,7 +27,7 @@ public class ServicosPorAnimalDto {
     @ElementCollection
     private TipoServico[] tiposServicos = new TipoServico[0];
 
-    public static ServicosPorAnimalDto fromServicoPorAnimal(ServicosPorAnimal servicosPorAnimal) {
+    public static ServicosPorAnimalDto fromServicosPorAnimal(ServicosPorAnimal servicosPorAnimal) {
         return ServicosPorAnimalDto.builder()
                 .idAnimal(servicosPorAnimal.getAnimal().getId())
                 .tiposServicos(servicosPorAnimal.getTiposServico().toArray(new TipoServico[0]))

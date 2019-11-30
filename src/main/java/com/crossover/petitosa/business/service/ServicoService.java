@@ -3,11 +3,12 @@ package com.crossover.petitosa.business.service;
 import com.crossover.petitosa.business.entity.*;
 import com.crossover.petitosa.business.enums.EspecieAnimal;
 import com.crossover.petitosa.business.enums.PorteAnimal;
+import com.crossover.petitosa.business.enums.StatusServico;
 import com.crossover.petitosa.business.enums.TipoServico;
+import com.crossover.petitosa.data.repository.AvaliacaoRepository;
 import com.crossover.petitosa.data.repository.ServicoRepository;
-import com.crossover.petitosa.presentation.dto.FiltroServicoDto;
-import com.crossover.petitosa.presentation.dto.PrestadorEncontradoDto;
-import com.crossover.petitosa.presentation.dto.ServicosPorAnimalDto;
+import com.crossover.petitosa.data.repository.ServicosPorAnimalRepository;
+import com.crossover.petitosa.presentation.dto.*;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -15,7 +16,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 
 import javax.transaction.Transactional;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -24,7 +28,7 @@ import java.util.List;
 @Transactional
 public class ServicoService extends CrudService<Servico, Long, ServicoRepository> {
 
-    public static final double TAXA_PETITOSA = 0.25;
+    public static final BigDecimal TAXA_PETITOSA = new BigDecimal("0.25");
 
     @Autowired
     private UsuarioService usuarioService;
@@ -41,10 +45,175 @@ public class ServicoService extends CrudService<Servico, Long, ServicoRepository
     @Autowired
     private ContratanteService contratanteService;
 
-    // TODO: solicitar servico by solicitacao servico
+    @Autowired
+    private ServicosPorAnimalRepository servicosPorAnimalRepository;
+
+    @Autowired
+    private AvaliacaoRepository avaliacaoRepository;
+
+    @Autowired
+    private MoneyService moneyService;
+
+    public List<Servico> listarServicosPorContratante(Long idContratante) {
+        return getRepository().findAllByContratanteId(idContratante);
+    }
+
+    public List<Servico> listarServicosPorPrestador(Long idPrestador) {
+        return getRepository().findAllByPrestadorId(idPrestador);
+    }
+
+    public ServicoDto solicitar(SolicitacaoServicoDto solicitacaoServicoDto) {
+        Contratante contratante = solicitacaoServicoDto.getIdContratante() == null ? null : contratanteService.findById(solicitacaoServicoDto.getIdContratante());
+        if (contratante == null)
+            throw new HttpClientErrorException(HttpStatus.NOT_FOUND, "ID de contratante não encontrado");
+
+        Prestador prestador = solicitacaoServicoDto.getIdPrestador() == null ? null : prestadorService.findById(solicitacaoServicoDto.getIdPrestador());
+        if (prestador == null)
+            throw new HttpClientErrorException(HttpStatus.NOT_FOUND, "ID de prestador não encontrado");
+
+        if (!solicitacaoServicoDto.getDataEsperada().isAfter(LocalDateTime.now()))
+            throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Data do serviço não pode ser antes de agora");
+
+        if (!prestadorPrestaTodosServicos(prestador, solicitacaoServicoDto.getServicosPorAnimais()))
+            throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Prestador não presta algum dos serviços selecionados");
+
+        List<ServicosPorAnimal> servicosPorAnimal = new ArrayList<>();
+        for (ServicosPorAnimalDto spaDto : solicitacaoServicoDto.getServicosPorAnimais()) {
+            Animal animal = animalService.findById(spaDto.getIdAnimal());
+            if (animal == null)
+                throw new HttpClientErrorException(HttpStatus.NOT_FOUND, "ID de animal não encontrado");
+
+            servicosPorAnimal.add(ServicosPorAnimal.builder()
+                    .animal(animal)
+                    .tiposServico(Arrays.asList(spaDto.getTiposServicos()))
+                    .build());
+        }
+
+        BigDecimal precoSemTaxa = calcularPrecoTodosServicos(prestador, solicitacaoServicoDto.getServicosPorAnimais(), false);
+        BigDecimal precoTotal = calcularPrecoTodosServicos(prestador, solicitacaoServicoDto.getServicosPorAnimais(), true);
+
+        Servico servico = Servico.builder()
+                .contratante(contratante)
+                .prestador(prestador)
+                .enderecoServico(contratante.getEndereco())
+                .observacoes(solicitacaoServicoDto.getObservacoes())
+                .valorSemTaxa(precoSemTaxa)
+                .valorTotal(precoTotal)
+                .dataSolicitacao(LocalDateTime.now())
+                .dataEsperadaRealizacao(solicitacaoServicoDto.getDataEsperada())
+                .status(StatusServico.PENDENTE)
+                .build();
+        servico = save(servico);
+
+        for (ServicosPorAnimal spa : servicosPorAnimal)
+            spa.setServico(servico);
+        servicosPorAnimalRepository.saveAll(servicosPorAnimal);
+        servico.setServicosPorAnimais(servicosPorAnimal);
+
+        return ServicoDto.fromServico(servico);
+    }
+
+    public ServicoDto aceitar(long idServico) {
+        Servico servico = findById(idServico);
+        if (servico == null)
+            throw new HttpClientErrorException(HttpStatus.NOT_FOUND, "ID de servico não encontrado");
+
+        if (servico.getStatus() != StatusServico.PENDENTE)
+            throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Só pode aceitar serviços pendentes");
+
+        servico.setStatus(StatusServico.ACEITO);
+        servico.setDataAceitacao(LocalDateTime.now());
+        save(servico);
+
+        return ServicoDto.fromServico(servico);
+    }
+
+    public ServicoDto rejeitar(long idServico) {
+        Servico servico = findById(idServico);
+        if (servico == null)
+            throw new HttpClientErrorException(HttpStatus.NOT_FOUND, "ID de servico não encontrado");
+
+        if (servico.getStatus() != StatusServico.PENDENTE)
+            throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Só pode rejeitar serviços pendentes");
+
+        servico.setStatus(StatusServico.REJEITADO);
+        servico.setDataRejeicao(LocalDateTime.now());
+        save(servico);
+
+        return ServicoDto.fromServico(servico);
+    }
+
+    public ServicoDto desistir(long idServico) {
+        Servico servico = findById(idServico);
+        if (servico == null)
+            throw new HttpClientErrorException(HttpStatus.NOT_FOUND, "ID de servico não encontrado");
+
+        if (servico.getStatus() != StatusServico.PENDENTE && servico.getStatus() != StatusServico.ACEITO)
+            throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Só pode desistir de serviços pendentes ou aceitos");
+
+        servico.setStatus(StatusServico.DESISTIDO);
+        servico.setDataDesistencia(LocalDateTime.now());
+        save(servico);
+
+        return ServicoDto.fromServico(servico);
+    }
+
+    public ServicoDto iniciarRealizacao(long idServico) {
+        Servico servico = findById(idServico);
+        if (servico == null)
+            throw new HttpClientErrorException(HttpStatus.NOT_FOUND, "ID de servico não encontrado");
+
+        if (servico.getStatus() != StatusServico.ACEITO)
+            throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Só pode iniciar realização de serviços aceitos");
+
+        servico.setStatus(StatusServico.EM_ANDAMENTO);
+        servico.setDataInicioRealizacao(LocalDateTime.now());
+        save(servico);
+
+        return ServicoDto.fromServico(servico);
+    }
+
+    public ServicoDto terminarRealizacao(long idServico) {
+        Servico servico = findById(idServico);
+        if (servico == null)
+            throw new HttpClientErrorException(HttpStatus.NOT_FOUND, "ID de servico não encontrado");
+
+        if (servico.getStatus() != StatusServico.EM_ANDAMENTO)
+            throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Só pode terminar realização de serviços em andamento");
+
+        moneyService.processarPagamentoServico(servico);
+
+        servico.setStatus(StatusServico.TERMINADO);
+        servico.setDataTerminoRealizacao(LocalDateTime.now());
+        save(servico);
+
+        return ServicoDto.fromServico(servico);
+    }
+
+    public ServicoDto avaliar(long idServico, NovaAvaliacaoDto avaliacaoDto) {
+        Servico servico = findById(idServico);
+        if (servico == null)
+            throw new HttpClientErrorException(HttpStatus.NOT_FOUND, "ID de servico não encontrado");
+
+        if (servico.getStatus() != StatusServico.TERMINADO)
+            throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Só pode avaliar serviços terminados");
+
+        if (servico.getAvaliacao() != null)
+            throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Serviço já foi avaliado");
+
+        Avaliacao avaliacao = Avaliacao.builder()
+                .dataAvaliacao(LocalDateTime.now())
+                .nota(avaliacaoDto.getNota())
+                .texto(avaliacaoDto.getTexto())
+                .servico(servico)
+                .build();
+        avaliacaoRepository.save(avaliacao);
+        servico.setAvaliacao(avaliacao);
+
+        return ServicoDto.fromServico(servico);
+    }
 
     public List<PrestadorEncontradoDto> buscarPrestadores(FiltroServicoDto filtroServicoDto) {
-
         Contratante contratante = filtroServicoDto.getIdContratante() == null ? null : contratanteService.findById(filtroServicoDto.getIdContratante());
         if (contratante == null)
             throw new HttpClientErrorException(HttpStatus.NOT_FOUND, "ID de contratante não encontrado");
@@ -56,10 +225,10 @@ public class ServicoService extends CrudService<Servico, Long, ServicoRepository
             if (!prestadorPrestaTodosServicos(p, filtroServicoDto.getServicosPorAnimais()))
                 continue;
 
-            double precoTotal = calcularPrecoTodosServicos(p, filtroServicoDto.getServicosPorAnimais());
+            BigDecimal precoTotal = calcularPrecoTodosServicos(p, filtroServicoDto.getServicosPorAnimais(), true);
 
             // Evita prestadores cujo preço total é acima do máximo
-            if (filtroServicoDto.getPrecoTotalMaximo() != null && precoTotal > filtroServicoDto.getPrecoTotalMaximo())
+            if (filtroServicoDto.getPrecoTotalMaximo() != null && precoTotal.compareTo(filtroServicoDto.getPrecoTotalMaximo()) > 0)
                 continue;
 
             double distancia = calcularDistanciaPrestador(contratante, p);
@@ -72,7 +241,7 @@ public class ServicoService extends CrudService<Servico, Long, ServicoRepository
             prestadorEncontradoDtos.add(PrestadorEncontradoDto.builder()
                     .nome(p.getNome())
                     .descricao(p.getDescricao())
-                    .avaliacao(prestadorService.calculateAvaliacaoMedia(p))
+                    .avaliacao(prestadorService.calculateNotaMedia(p))
                     .distancia(distancia)
                     .idPrestador(p.getId())
                     .imgPerfil(p.getImgPerfil())
@@ -82,24 +251,25 @@ public class ServicoService extends CrudService<Servico, Long, ServicoRepository
         return prestadorEncontradoDtos;
     }
 
-    private double calcularPrecoTodosServicos(Prestador prestador, ServicosPorAnimalDto[] servicos) {
-        double sum = 0.0;
+    private BigDecimal calcularPrecoTodosServicos(Prestador prestador, ServicosPorAnimalDto[] servicos, boolean incluirTaxaPetitosa) {
+        BigDecimal sum = BigDecimal.ZERO;
         for (ServicosPorAnimalDto servicosPorAnimalDto : servicos)
-            sum += calcularPrecoServicosPorAnimal(prestador, servicosPorAnimalDto);
-        sum += sum * TAXA_PETITOSA;
+            sum = sum.add(calcularPrecoServicosPorAnimal(prestador, servicosPorAnimalDto));
+        if (incluirTaxaPetitosa)
+            sum = sum.add(sum.multiply(TAXA_PETITOSA));
         return sum;
     }
 
-    private double calcularPrecoServicosPorAnimal(Prestador prestador, ServicosPorAnimalDto servicosPorAnimalDto) {
+    private BigDecimal calcularPrecoServicosPorAnimal(Prestador prestador, ServicosPorAnimalDto servicosPorAnimalDto) {
         Animal animal = animalService.findById(servicosPorAnimalDto.getIdAnimal());
         if (animal == null)
             throw new HttpClientErrorException(HttpStatus.NOT_FOUND, "ID de animal não encontrado");
 
-        double sum = 0.0;
-        List<Double> precos = prestador.getPrecos();
+        BigDecimal sum = BigDecimal.ZERO;
+        List<BigDecimal> precos = prestador.getPrecos();
         for (TipoServico tipoServico : servicosPorAnimalDto.getTiposServicos()) {
             int indice = getIndiceArrayDeServicos(animal.getEspecie(), animal.getPorte(), tipoServico);
-            sum += precos.get(indice);
+            sum = sum.add(precos.get(indice));
         }
         return sum;
     }
@@ -132,22 +302,6 @@ public class ServicoService extends CrudService<Servico, Long, ServicoRepository
     }
 
     private int getIndiceArrayDeServicos(EspecieAnimal especie, PorteAnimal porte, TipoServico tipoServico) {
-        // 0    cão p banho
-        // 1    cão p tosa
-        // 2    cão p passeio
-        // 3    cão m banho
-        // 4    cão m tosa
-        // 5    cão m passeio
-        // 6    cão g banho
-        // 7    cão g tosa
-        // 8    cão g passeio
-        // 9    gato p banho
-        // 10   gato p tosa
-        // 11   gato m banho
-        // 12   gato m tosa
-        // 13   gato g banho
-        // 14   gato g tosa
-
         int indiceBase = 0;
         switch (especie) {
             case CACHORRO:

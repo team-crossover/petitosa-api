@@ -3,10 +3,6 @@ package com.crossover.petitosa.business.network;
 import com.crossover.petitosa.business.entity.Endereco;
 import lombok.extern.log4j.Log4j2;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
@@ -26,12 +22,22 @@ public class CepNetwork {
 
     @Transactional
     public Endereco findEnderecoByCep(int cep) {
-        String url = CEPABERTO_CEP_URL + String.format("%08d", cep);
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Token token=" + CEPABERTO_TOKEN);
-        HttpEntity<String> entity = new HttpEntity<>("", headers);
-        ResponseEntity<CepAbertoEndereco> response = restTemplate.exchange(url, HttpMethod.GET, entity, CepAbertoEndereco.class);
-        return response.getBody().toEndereco();
+        // HOTFIX 30/11/2019: CEP Aberto está morto, depois retornamos a usá-lo
+        return Endereco.builder()
+                .uf("GO")
+                .cidade("Goiania")
+                .bairro("Setor Sudoeste")
+                .logradouro("Rua C 95")
+                .cep(cep)
+                .latitude(-16.7048848)
+                .longitude(-49.3057412)
+                .build();
+//        String url = CEPABERTO_CEP_URL + String.format("%08d", cep);
+//        HttpHeaders headers = new HttpHeaders();
+//        headers.set("Authorization", "Token token=" + CEPABERTO_TOKEN);
+//        HttpEntity<String> entity = new HttpEntity<>("", headers);
+//        ResponseEntity<CepAbertoEndereco> response = restTemplate.exchange(url, HttpMethod.GET, entity, CepAbertoEndereco.class);
+//        return response.getBody().toEndereco();
     }
 
     private static class CepAbertoEndereco {

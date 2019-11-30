@@ -15,7 +15,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString(exclude = {"avaliacoes", "comentarios", "animais"})
+@ToString(exclude = {"servicos", "animais"})
 @Entity
 @Table(name = "contratantes")
 public class Contratante {
@@ -56,12 +56,7 @@ public class Contratante {
 
     @Builder.Default
     @JsonIgnore
-    @OneToMany(mappedBy = "avaliador")
-    private List<Avaliacao> avaliacoes = new ArrayList<>();
-
-    @Builder.Default
-    @JsonIgnore
-    @OneToMany(mappedBy = "avaliador")
-    private List<Comentario> comentarios = new ArrayList<>();
+    @OneToMany(mappedBy = "contratante")
+    private List<Servico> servicos = new ArrayList<>();
 
 }

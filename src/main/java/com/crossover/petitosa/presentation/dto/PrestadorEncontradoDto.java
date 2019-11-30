@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.validation.constraints.*;
+import java.math.BigDecimal;
 
 @Data
 @Builder
@@ -37,6 +38,6 @@ public class PrestadorEncontradoDto {
 
     @NotNull
     @ApiModelProperty(example = "59.90")
-    private Double precoTotal;
+    private BigDecimal precoTotal;
 
 }

@@ -7,6 +7,7 @@ import javax.persistence.*;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,7 +16,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString(exclude = {})
+@ToString(exclude = {"servicosPorAnimais"})
 @Entity
 @Table(name = "servicos")
 public class Servico {
@@ -32,28 +33,47 @@ public class Servico {
     @ManyToOne
     private Prestador prestador;
 
-    @Builder.Default
-    @OneToMany(mappedBy = "servico", orphanRemoval = true)
-    private List<ServicosPorAnimal> servicosPorAnimais = new ArrayList<>();
-
-    @NotNull
-    private LocalDateTime dataAgendado;
-
     @NotNull
     @OneToOne(orphanRemoval = true)
-    private Endereco enderecoAgendado;
+    private Endereco enderecoServico;
 
     @Size(max = 500)
     private String observacoes;
 
     @NotNull
     @Min(0)
-    private Double valorTotal;
+    private BigDecimal valorSemTaxa;
 
     @NotNull
-    private LocalDateTime dataSolicitado;
+    @Min(0)
+    private BigDecimal valorTotal;
+
+    @NotNull
+    private LocalDateTime dataSolicitacao;
+
+    private LocalDateTime dataAceitacao;
+
+    private LocalDateTime dataRejeicao;
+
+    private LocalDateTime dataDesistencia;
+
+    @NotNull
+    private LocalDateTime dataEsperadaRealizacao;
+
+    private LocalDateTime dataInicioRealizacao;
+
+    private LocalDateTime dataTerminoRealizacao;
 
     @NotNull
     private StatusServico status;
+
+    @OneToOne(orphanRemoval = true)
+    private Avaliacao avaliacao;
+
+    // -----
+
+    @Builder.Default
+    @OneToMany(mappedBy = "servico", orphanRemoval = true)
+    private List<ServicosPorAnimal> servicosPorAnimais = new ArrayList<>();
 
 }

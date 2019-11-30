@@ -12,6 +12,7 @@ import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Data
@@ -57,8 +58,8 @@ public class NovoPrestadorDto {
     @NotNull
     @Size(min = 15, max = 15)
     @ElementCollection
-    @ApiModelProperty(example = "[20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20]")
-    private Double[] precos = new Double[15];
+    @ApiModelProperty(example = "[20.5, 20.25, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20]")
+    private BigDecimal[] precos = new BigDecimal[15];
 
     @ApiModelProperty(notes = "Opcional, se tiver em branco será ignorado")
     @Size(max = 10485760) // 10 MB

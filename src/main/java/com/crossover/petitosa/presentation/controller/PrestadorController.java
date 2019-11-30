@@ -30,13 +30,13 @@ public class PrestadorController {
     @GetMapping("/api/v1/prestadores")
     @ApiOperation("Obtém dados de todos prestadores")
     private List<PrestadorDto> getAll() {
-        return prestadorService.findAll().stream().map(PrestadorDto::fromPrestador).collect(Collectors.toList());
+        return prestadorService.findAll().stream().map(p -> PrestadorDto.fromPrestador(p, prestadorService)).collect(Collectors.toList());
     }
 
     @PostMapping("/api/v1/prestador/{id}")
     @ApiOperation("Editar dados de prestador")
     private PrestadorDto update(
-            @ApiParam("ID do prestador a ser atualizado") @PathVariable(value = "id", required = true) Long id,
+            @ApiParam("ID do prestador a ser atualizado") @PathVariable(value = "id") Long id,
             @ApiParam("Novos dados do prestador") @RequestBody @Valid NovoPrestadorDto novosDadosDto) {
         return prestadorService.update(id, novosDadosDto);
     }
@@ -47,6 +47,6 @@ public class PrestadorController {
         Prestador prestador = prestadorService.findById(id);
         if (prestador == null)
             throw new HttpClientErrorException(HttpStatus.NOT_FOUND);
-        return PrestadorDto.fromPrestador(prestador);
+        return PrestadorDto.fromPrestador(prestador, prestadorService);
     }
 }

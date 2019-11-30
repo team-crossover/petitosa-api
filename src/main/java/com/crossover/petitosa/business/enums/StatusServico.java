@@ -4,6 +4,7 @@ public enum StatusServico {
     PENDENTE,
     ACEITO,
     REJEITADO,
-    CANCELADO,
-    ENCERRADO
+    EM_ANDAMENTO,
+    TERMINADO,
+    DESISTIDO
 }

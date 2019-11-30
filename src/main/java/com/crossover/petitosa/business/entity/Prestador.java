@@ -7,6 +7,7 @@ import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,7 +16,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString(exclude = {"avaliacoes", "comentarios"})
+@ToString(exclude = {"servicos"})
 @Entity
 @Table(name = "prestadores")
 public class Prestador {
@@ -51,7 +52,7 @@ public class Prestador {
     @NotNull
     @Size(min = 15, max = 15)
     @ElementCollection
-    private List<Double> precos = new ArrayList<>();
+    private List<BigDecimal> precos = new ArrayList<>();
 
     @Basic(fetch = FetchType.LAZY)
     @Size(max = 10485760) // 10 MB
@@ -66,14 +67,7 @@ public class Prestador {
     @Builder.Default
     @JsonIgnore
     @OneToMany(mappedBy = "prestador")
-    private List<Avaliacao> avaliacoes = new ArrayList<>();
-
-    @Builder.Default
-    @JsonIgnore
-    @OneToMany(mappedBy = "prestador")
-    private List<Comentario> comentarios = new ArrayList<>();
-
-    // ------------
+    private List<Servico> servicos = new ArrayList<>();
 
     // ÍNDICES DAS ARRAYS DE SERVIÇOS PRESTADOS E PREÇOS
     // i    espécie/porte/tipo de serviço

@@ -13,6 +13,8 @@ import org.springframework.web.client.HttpClientErrorException;
 import javax.transaction.Transactional;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -67,7 +69,7 @@ public class PrestadorService extends CrudService<Prestador, Long, PrestadorRepo
                 .build();
         prestador = save(prestador);
 
-        return PrestadorDto.fromPrestador(prestador);
+        return PrestadorDto.fromPrestador(prestador, this);
     }
 
     public PrestadorDto update(Long id, NovoPrestadorDto novosDadosDto) {
@@ -112,13 +114,25 @@ public class PrestadorService extends CrudService<Prestador, Long, PrestadorRepo
         prestador.setContaBancaria(conta);
         prestador = save(prestador);
 
-        return PrestadorDto.fromPrestador(prestador);
+        return PrestadorDto.fromPrestador(prestador, this);
     }
 
-    public double calculateAvaliacaoMedia(Prestador prestador) {
+    public double calculateNotaMedia(Prestador prestador) {
         double sum = 0.0;
-        for (Avaliacao aval : prestador.getAvaliacoes())
-            sum += aval.getNota();
-        return sum;
+        long count = 0;
+        for (Servico servico : prestador.getServicos())
+            if (servico.getAvaliacao() != null) {
+                sum += servico.getAvaliacao().getNota();
+                count++;
+            }
+        return count <= 0 ? 5.0 : sum / count;
+    }
+
+    public List<String> getComentarios(Prestador prestador) {
+        return prestador.getServicos().stream()
+                .filter(s -> s.getAvaliacao() != null)
+                .map(s -> s.getAvaliacao().getTexto())
+                .filter(t -> t != null && !t.isEmpty())
+                .collect(Collectors.toList());
     }
 }

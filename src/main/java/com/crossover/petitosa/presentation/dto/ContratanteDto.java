@@ -12,8 +12,6 @@ import lombok.NoArgsConstructor;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import java.time.LocalDate;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Data
 @Builder
@@ -49,7 +47,9 @@ public class ContratanteDto {
     @NotNull
     private CartaoCreditoDto cartaoCredito;
 
-    private List<Long> idsAnimais;
+    private Long[] idsAnimais;
+
+    private ResumoServicoDto[] servicos;
 
     public static ContratanteDto fromContratante(Contratante contratante) {
         return ContratanteDto.builder()
@@ -62,7 +62,8 @@ public class ContratanteDto {
                 .endereco(EnderecoDto.fromEndereco(contratante.getEndereco()))
                 .imgPerfil(contratante.getImgPerfil())
                 .cartaoCredito(CartaoCreditoDto.fromCartao(contratante.getCartaoCredito()))
-                .idsAnimais(contratante.getAnimais().stream().map(Animal::getId).collect(Collectors.toList()))
+                .idsAnimais(contratante.getAnimais().stream().map(Animal::getId).toArray(Long[]::new))
+                .servicos(contratante.getServicos().stream().map(ResumoServicoDto::fromServico).toArray(ResumoServicoDto[]::new))
                 .build();
     }
 
