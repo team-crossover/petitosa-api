@@ -8,10 +8,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import javax.validation.constraints.Max;
-import javax.validation.constraints.Min;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
+import javax.validation.constraints.*;
 import java.time.LocalDateTime;
 
 @Data
@@ -36,6 +33,8 @@ public class AvaliacaoDto {
 
     public static AvaliacaoDto fromAvaliacao(Avaliacao avaliacao) {
         return AvaliacaoDto.builder()
+//                .id(avaliacao.getId())
+//                .nomeContratante(avaliacao.getServico().getContratante().getNome())
                 .dataAvaliacao(avaliacao.getDataAvaliacao())
                 .nota(avaliacao.getNota())
                 .texto(avaliacao.getTexto())

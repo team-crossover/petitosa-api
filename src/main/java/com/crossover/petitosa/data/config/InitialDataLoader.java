@@ -157,7 +157,7 @@ public class InitialDataLoader implements ApplicationListener<ContextRefreshedEv
         CartaoCreditoDto cartaoCreditoDto = CartaoCreditoDto.builder()
                 .numero("5555666677778888")
                 .validade("20/2020")
-                .cvv("123")
+                .cvv("999")
                 .build();
 
         NovoContratanteDto novoContratanteDto = NovoContratanteDto.builder()

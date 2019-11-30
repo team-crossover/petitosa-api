@@ -1,6 +1,7 @@
 package com.crossover.petitosa.presentation.dto;
 
 import com.crossover.petitosa.business.entity.Prestador;
+import com.crossover.petitosa.business.enums.StatusServico;
 import com.crossover.petitosa.business.service.PrestadorService;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.annotations.ApiModelProperty;
@@ -67,14 +68,12 @@ public class PrestadorDto {
     @NotNull
     private ContaBancariaDto contaBancaria;
 
-    private ResumoServicoDto[] servicos;
-
     @NotNull
     @ApiModelProperty(example = "4", notes = "Nota média do prestador, de 1 a 5")
-    private double avaliacao;
+    private double notaMedia;
 
-    @ApiModelProperty("Comentários recebidos pelo prestador em avaliações")
-    private String[] comentarios;
+    @ApiModelProperty(notes = "Os resumos dos 10 últimos serviços prestados por este prestador")
+    private ResumoServicoDto[] ultimosServicos;
 
     public static PrestadorDto fromPrestador(Prestador prestador, PrestadorService prestadorService) {
         return PrestadorDto.builder()
@@ -90,9 +89,13 @@ public class PrestadorDto {
                 .endereco(EnderecoDto.fromEndereco(prestador.getEndereco()))
                 .imgPerfil(prestador.getImgPerfil())
                 .contaBancaria(ContaBancariaDto.fromConta(prestador.getContaBancaria()))
-                .servicos(prestador.getServicos().stream().map(ResumoServicoDto::fromServico).toArray(ResumoServicoDto[]::new))
-                .avaliacao(prestadorService.calculateNotaMedia(prestador))
-                .comentarios(prestadorService.getComentarios(prestador).toArray(new String[0]))
+                .notaMedia(prestadorService.calculateNotaMedia(prestador))
+                .ultimosServicos(prestador.getServicos().stream()
+                        .filter(s -> s.getStatus() == StatusServico.TERMINADO)
+                        .sorted((a, b) -> b.getDataSolicitacao().compareTo(a.getDataSolicitacao()))
+                        .limit(10)
+                        .map(ResumoServicoDto::fromServico)
+                        .toArray(ResumoServicoDto[]::new))
                 .build();
     }
 

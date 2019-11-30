@@ -2,6 +2,7 @@ package com.crossover.petitosa.presentation.dto;
 
 import com.crossover.petitosa.business.entity.Animal;
 import com.crossover.petitosa.business.entity.Contratante;
+import com.crossover.petitosa.business.enums.StatusServico;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;
@@ -49,7 +50,8 @@ public class ContratanteDto {
 
     private Long[] idsAnimais;
 
-    private ResumoServicoDto[] servicos;
+    @ApiModelProperty(notes = "Os resumos dos últimos 10 serviços contratados por este contratante")
+    private ResumoServicoDto[] ultimosServicos;
 
     public static ContratanteDto fromContratante(Contratante contratante) {
         return ContratanteDto.builder()
@@ -63,7 +65,12 @@ public class ContratanteDto {
                 .imgPerfil(contratante.getImgPerfil())
                 .cartaoCredito(CartaoCreditoDto.fromCartao(contratante.getCartaoCredito()))
                 .idsAnimais(contratante.getAnimais().stream().map(Animal::getId).toArray(Long[]::new))
-                .servicos(contratante.getServicos().stream().map(ResumoServicoDto::fromServico).toArray(ResumoServicoDto[]::new))
+                .ultimosServicos(contratante.getServicos().stream()
+                        .filter(s -> s.getStatus() == StatusServico.TERMINADO)
+                        .sorted((a, b) -> b.getDataSolicitacao().compareTo(a.getDataSolicitacao()))
+                        .limit(10)
+                        .map(ResumoServicoDto::fromServico)
+                        .toArray(ResumoServicoDto[]::new))
                 .build();
     }
 

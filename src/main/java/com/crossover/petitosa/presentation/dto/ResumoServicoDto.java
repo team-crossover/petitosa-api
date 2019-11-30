@@ -24,6 +24,9 @@ public class ResumoServicoDto {
     private Long idContratante;
 
     @NotNull
+    private String nomeContratante;
+
+    @NotNull
     private Long idPrestador;
 
     @NotNull
@@ -47,6 +50,7 @@ public class ResumoServicoDto {
         return ResumoServicoDto.builder()
                 .id(servico.getId())
                 .idContratante(servico.getContratante().getId())
+                .nomeContratante(servico.getContratante().getNome())
                 .idPrestador(servico.getPrestador().getId())
                 .nomePrestador(servico.getPrestador().getNome())
                 .dataSolicitacao(servico.getDataSolicitacao())

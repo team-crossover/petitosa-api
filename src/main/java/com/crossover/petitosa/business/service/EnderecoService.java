@@ -39,6 +39,6 @@ public class EnderecoService extends CrudService<Endereco, Long, EnderecoReposit
         double d = earthRadius * c;
 
         // round up to nearest multiple of 100 and dont allow below 0
-        return Math.max(0.0, Math.ceil(d / 100.0) * 100.0);
+        return Math.ceil(Math.max(0.1, d) / 100.0) * 100.0;
     }
 }
