@@ -22,22 +22,12 @@ public class CepNetwork {
 
     @Transactional
     public Endereco findEnderecoByCep(int cep) {
-        // HOTFIX 30/11/2019: CEP Aberto está morto, depois retornamos a usá-lo
-        return Endereco.builder()
-                .uf("GO")
-                .cidade("Goiania")
-                .bairro("Setor Sudoeste")
-                .logradouro("Rua C 95")
-                .cep(cep)
-                .latitude(-16.7048848)
-                .longitude(-49.3057412)
-                .build();
-//        String url = CEPABERTO_CEP_URL + String.format("%08d", cep);
-//        HttpHeaders headers = new HttpHeaders();
-//        headers.set("Authorization", "Token token=" + CEPABERTO_TOKEN);
-//        HttpEntity<String> entity = new HttpEntity<>("", headers);
-//        ResponseEntity<CepAbertoEndereco> response = restTemplate.exchange(url, HttpMethod.GET, entity, CepAbertoEndereco.class);
-//        return response.getBody().toEndereco();
+        String url = CEPABERTO_CEP_URL + String.format("%08d", cep);
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Token token=" + CEPABERTO_TOKEN);
+        HttpEntity<String> entity = new HttpEntity<>("", headers);
+        ResponseEntity<CepAbertoEndereco> response = restTemplate.exchange(url, HttpMethod.GET, entity, CepAbertoEndereco.class);
+        return response.getBody().toEndereco();
     }
 
     private static class CepAbertoEndereco {
