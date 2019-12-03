@@ -25,8 +25,12 @@ public class ServicoDto {
     @NotNull
     private Long idContratante;
 
+    private String nomeContratante;
+
     @NotNull
     private Long idPrestador;
+
+    private String nomePrestador;
 
     @NotNull
     @ApiModelProperty(notes = "Endereço onde será/foi realizado o serviço, pode ser diferente do endereço atual do contratante")
@@ -84,7 +88,9 @@ public class ServicoDto {
         return ServicoDto.builder()
                 .id(servico.getId())
                 .idContratante(servico.getContratante().getId())
+                .nomeContratante(servico.getContratante().getNome())
                 .idPrestador(servico.getPrestador().getId())
+                .nomePrestador(servico.getPrestador().getNome())
                 .enderecoEsperado(EnderecoDto.fromEndereco(servico.getEnderecoServico()))
                 .observacoes(servico.getObservacoes())
                 .valorTotal(servico.getValorTotal())

@@ -1,6 +1,8 @@
 package com.crossover.petitosa.presentation.dto;
 
 import com.crossover.petitosa.business.entity.ServicosPorAnimal;
+import com.crossover.petitosa.business.enums.EspecieAnimal;
+import com.crossover.petitosa.business.enums.PorteAnimal;
 import com.crossover.petitosa.business.enums.TipoServico;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.*;
@@ -20,6 +22,12 @@ public class ServicosPorAnimalDto {
     @NotNull
     private Long idAnimal;
 
+    private String apelidoAnimal;
+
+    private EspecieAnimal especieAnimal;
+
+    private PorteAnimal porteAnimal;
+
     @ApiModelProperty(notes = "Tipos de serviços que o animal recebe", example = "[ TOSA, BANHO ]")
     @Builder.Default
     @NotNull
@@ -30,6 +38,9 @@ public class ServicosPorAnimalDto {
     public static ServicosPorAnimalDto fromServicosPorAnimal(ServicosPorAnimal servicosPorAnimal) {
         return ServicosPorAnimalDto.builder()
                 .idAnimal(servicosPorAnimal.getAnimal().getId())
+                .apelidoAnimal(servicosPorAnimal.getAnimal().getApelido())
+                .especieAnimal(servicosPorAnimal.getAnimal().getEspecie())
+                .porteAnimal(servicosPorAnimal.getAnimal().getPorte())
                 .tiposServicos(servicosPorAnimal.getTiposServico().toArray(new TipoServico[0]))
                 .build();
     }
