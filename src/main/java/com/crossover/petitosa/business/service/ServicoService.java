@@ -17,6 +17,7 @@ import org.springframework.web.client.HttpClientErrorException;
 
 import javax.transaction.Transactional;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -257,6 +258,7 @@ public class ServicoService extends CrudService<Servico, Long, ServicoRepository
             sum = sum.add(calcularPrecoServicosPorAnimal(prestador, servicosPorAnimalDto));
         if (incluirTaxaPetitosa)
             sum = sum.add(sum.multiply(TAXA_PETITOSA));
+        sum = sum.setScale(2, RoundingMode.HALF_EVEN);
         return sum;
     }
 
