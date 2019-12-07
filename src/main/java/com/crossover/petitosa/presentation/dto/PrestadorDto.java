@@ -75,6 +75,8 @@ public class PrestadorDto {
     @ApiModelProperty(notes = "Os resumos dos 10 últimos serviços prestados por este prestador")
     private ResumoServicoDto[] ultimosServicos;
 
+    private BigDecimal taxaDesistenciaAPagar;
+
     public static PrestadorDto fromPrestador(Prestador prestador, PrestadorService prestadorService) {
         return PrestadorDto.builder()
                 .id(prestador.getId())
@@ -96,6 +98,7 @@ public class PrestadorDto {
                         .limit(10)
                         .map(ResumoServicoDto::fromServico)
                         .toArray(ResumoServicoDto[]::new))
+                .taxaDesistenciaAPagar(prestador.getUsuario().getTaxaDesistenciaAPagar())
                 .build();
     }
 

@@ -1,10 +1,7 @@
 package com.crossover.petitosa.business.service;
 
 import com.crossover.petitosa.business.entity.*;
-import com.crossover.petitosa.business.enums.EspecieAnimal;
-import com.crossover.petitosa.business.enums.PorteAnimal;
-import com.crossover.petitosa.business.enums.StatusServico;
-import com.crossover.petitosa.business.enums.TipoServico;
+import com.crossover.petitosa.business.enums.*;
 import com.crossover.petitosa.data.repository.AvaliacaoRepository;
 import com.crossover.petitosa.data.repository.ServicoRepository;
 import com.crossover.petitosa.data.repository.ServicosPorAnimalRepository;
@@ -30,6 +27,8 @@ import java.util.List;
 public class ServicoService extends CrudService<Servico, Long, ServicoRepository> {
 
     public static final BigDecimal TAXA_PETITOSA = new BigDecimal("0.25");
+
+    public static final BigDecimal TAXA_DESISTENCIA = new BigDecimal("8.00");
 
     @Autowired
     private UsuarioService usuarioService;
@@ -63,6 +62,47 @@ public class ServicoService extends CrudService<Servico, Long, ServicoRepository
         return getRepository().findAllByPrestadorId(idPrestador);
     }
 
+    public List<PrestadorEncontradoDto> buscarPrestadores(FiltroServicoDto filtroServicoDto) {
+        Contratante contratante = filtroServicoDto.getIdContratante() == null ? null : contratanteService.findById(filtroServicoDto.getIdContratante());
+        if (contratante == null)
+            throw new HttpClientErrorException(HttpStatus.NOT_FOUND, "ID de contratante não encontrado");
+
+        Collection<Prestador> prestadores = prestadorService.findAll();
+        List<PrestadorEncontradoDto> prestadorEncontradoDtos = new ArrayList<>();
+        for (Prestador p : prestadores) {
+            // Evita prestadores que não suportam um dos serviços desejados
+            if (!prestadorPrestaTodosServicos(p, filtroServicoDto.getServicosPorAnimais()))
+                continue;
+
+            BigDecimal precoServico = calcularPrecoTodosServicos(p, filtroServicoDto.getServicosPorAnimais()).setScale(2, RoundingMode.HALF_EVEN);
+            BigDecimal precoTaxaPetitosa = calcularTaxaPetitosa(precoServico).setScale(2, RoundingMode.HALF_EVEN);
+            BigDecimal precoTaxaDesistencia = contratante.getUsuario().getTaxaDesistenciaAPagar().setScale(2, RoundingMode.HALF_EVEN);
+            BigDecimal precoTotal = precoServico.add(precoTaxaPetitosa).add(precoTaxaDesistencia).setScale(2, RoundingMode.HALF_EVEN);
+
+            // Evita prestadores cujo preço total é acima do máximo
+            if (filtroServicoDto.getPrecoTotalMaximo() != null && precoTotal.compareTo(filtroServicoDto.getPrecoTotalMaximo()) > 0)
+                continue;
+
+            double distancia = calcularDistanciaPrestador(contratante, p);
+
+            // Evita prestadores cuja distância é acima da máxima
+            if (filtroServicoDto.getDistanciaMaxima() != null && distancia > filtroServicoDto.getDistanciaMaxima())
+                continue;
+
+            // Cria o DTO de prestador encontrado
+            prestadorEncontradoDtos.add(PrestadorEncontradoDto.builder()
+                    .nome(p.getNome())
+                    .descricao(p.getDescricao())
+                    .avaliacao(prestadorService.calculateNotaMedia(p))
+                    .distancia(distancia)
+                    .idPrestador(p.getId())
+                    .imgPerfil(p.getImgPerfil())
+                    .precoTotal(precoTotal)
+                    .build());
+        }
+        return prestadorEncontradoDtos;
+    }
+
     public ServicoDto solicitar(SolicitacaoServicoDto solicitacaoServicoDto) {
         Contratante contratante = solicitacaoServicoDto.getIdContratante() == null ? null : contratanteService.findById(solicitacaoServicoDto.getIdContratante());
         if (contratante == null)
@@ -90,16 +130,20 @@ public class ServicoService extends CrudService<Servico, Long, ServicoRepository
                     .build());
         }
 
-        BigDecimal precoSemTaxa = calcularPrecoTodosServicos(prestador, solicitacaoServicoDto.getServicosPorAnimais(), false);
-        BigDecimal precoTotal = calcularPrecoTodosServicos(prestador, solicitacaoServicoDto.getServicosPorAnimais(), true);
+        BigDecimal precoServico = calcularPrecoTodosServicos(prestador, solicitacaoServicoDto.getServicosPorAnimais()).setScale(2, RoundingMode.HALF_EVEN);
+        BigDecimal precoTaxaPetitosa = calcularTaxaPetitosa(precoServico).setScale(2, RoundingMode.HALF_EVEN);
+        BigDecimal precoTaxaDesistencia = contratante.getUsuario().getTaxaDesistenciaAPagar().setScale(2, RoundingMode.HALF_EVEN);
+        BigDecimal precoTotal = precoServico.add(precoTaxaPetitosa).add(precoTaxaDesistencia).setScale(2, RoundingMode.HALF_EVEN);
 
         Servico servico = Servico.builder()
                 .contratante(contratante)
                 .prestador(prestador)
                 .enderecoServico(contratante.getEndereco())
                 .observacoes(solicitacaoServicoDto.getObservacoes())
-                .valorSemTaxa(precoSemTaxa)
-                .valorTotal(precoTotal)
+                .precoServico(precoServico)
+                .precoTaxaPetitosa(precoTaxaPetitosa)
+                .precoTaxaDesistencia(precoTaxaDesistencia)
+                .precoTotal(precoTotal)
                 .dataSolicitacao(LocalDateTime.now())
                 .dataEsperadaRealizacao(solicitacaoServicoDto.getDataEsperada())
                 .status(StatusServico.PENDENTE)
@@ -144,14 +188,28 @@ public class ServicoService extends CrudService<Servico, Long, ServicoRepository
         return ServicoDto.fromServico(servico);
     }
 
-    public ServicoDto desistir(long idServico) {
+    public ServicoDto desistir(long idUsuarioDesistente, long idServico) {
+        Usuario usuario = usuarioService.findById(idUsuarioDesistente);
+        if (usuario == null)
+            throw new HttpClientErrorException(HttpStatus.NOT_FOUND, "ID de usuário não encontrado");
+
         Servico servico = findById(idServico);
         if (servico == null)
             throw new HttpClientErrorException(HttpStatus.NOT_FOUND, "ID de servico não encontrado");
 
+        if (servico.getContratante() != usuario.getContratante() && servico.getPrestador() != usuario.getPrestador())
+            throw new HttpClientErrorException(HttpStatus.NOT_FOUND, "Só pode ser desistido pelo contratante ou pelo prestador");
+
         if (servico.getStatus() != StatusServico.PENDENTE && servico.getStatus() != StatusServico.ACEITO)
             throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Só pode desistir de serviços pendentes ou aceitos");
 
+        // Adiciona a taxa de desistência caso o serviço já tenha sido aceito anteriormente
+        if (servico.getStatus() == StatusServico.ACEITO) {
+            usuario.setTaxaDesistenciaAPagar(usuario.getTaxaDesistenciaAPagar().add(TAXA_DESISTENCIA).setScale(2, RoundingMode.HALF_EVEN));
+            usuario = usuarioService.save(usuario);
+        }
+
+        servico.setUsuarioDesistente(usuario);
         servico.setStatus(StatusServico.DESISTIDO);
         servico.setDataDesistencia(LocalDateTime.now());
         save(servico);
@@ -214,51 +272,14 @@ public class ServicoService extends CrudService<Servico, Long, ServicoRepository
         return ServicoDto.fromServico(servico);
     }
 
-    public List<PrestadorEncontradoDto> buscarPrestadores(FiltroServicoDto filtroServicoDto) {
-        Contratante contratante = filtroServicoDto.getIdContratante() == null ? null : contratanteService.findById(filtroServicoDto.getIdContratante());
-        if (contratante == null)
-            throw new HttpClientErrorException(HttpStatus.NOT_FOUND, "ID de contratante não encontrado");
-
-        Collection<Prestador> prestadores = prestadorService.findAll();
-        List<PrestadorEncontradoDto> prestadorEncontradoDtos = new ArrayList<>();
-        for (Prestador p : prestadores) {
-            // Evita prestadores que não suportam um dos serviços desejados
-            if (!prestadorPrestaTodosServicos(p, filtroServicoDto.getServicosPorAnimais()))
-                continue;
-
-            BigDecimal precoTotal = calcularPrecoTodosServicos(p, filtroServicoDto.getServicosPorAnimais(), true);
-
-            // Evita prestadores cujo preço total é acima do máximo
-            if (filtroServicoDto.getPrecoTotalMaximo() != null && precoTotal.compareTo(filtroServicoDto.getPrecoTotalMaximo()) > 0)
-                continue;
-
-            double distancia = calcularDistanciaPrestador(contratante, p);
-
-            // Evita prestadores cuja distância é acima da máxima
-            if (filtroServicoDto.getDistanciaMaxima() != null && distancia > filtroServicoDto.getDistanciaMaxima())
-                continue;
-
-            // Cria o DTO de prestador encontrado
-            prestadorEncontradoDtos.add(PrestadorEncontradoDto.builder()
-                    .nome(p.getNome())
-                    .descricao(p.getDescricao())
-                    .avaliacao(prestadorService.calculateNotaMedia(p))
-                    .distancia(distancia)
-                    .idPrestador(p.getId())
-                    .imgPerfil(p.getImgPerfil())
-                    .precoTotal(precoTotal)
-                    .build());
-        }
-        return prestadorEncontradoDtos;
+    private BigDecimal calcularTaxaPetitosa(BigDecimal valorParaPrestador) {
+        return valorParaPrestador.multiply(TAXA_PETITOSA);
     }
 
-    private BigDecimal calcularPrecoTodosServicos(Prestador prestador, ServicosPorAnimalDto[] servicos, boolean incluirTaxaPetitosa) {
+    private BigDecimal calcularPrecoTodosServicos(Prestador prestador, ServicosPorAnimalDto[] servicos) {
         BigDecimal sum = BigDecimal.ZERO;
         for (ServicosPorAnimalDto servicosPorAnimalDto : servicos)
             sum = sum.add(calcularPrecoServicosPorAnimal(prestador, servicosPorAnimalDto));
-        if (incluirTaxaPetitosa)
-            sum = sum.add(sum.multiply(TAXA_PETITOSA));
-        sum = sum.setScale(2, RoundingMode.HALF_EVEN);
         return sum;
     }
 

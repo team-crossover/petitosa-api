@@ -3,6 +3,7 @@ package com.crossover.petitosa.business.service;
 import com.crossover.petitosa.business.entity.CartaoCredito;
 import com.crossover.petitosa.business.entity.ContaBancaria;
 import com.crossover.petitosa.business.entity.Servico;
+import com.crossover.petitosa.business.entity.Usuario;
 import com.crossover.petitosa.business.network.PoderosasBankNetwork;
 import com.crossover.petitosa.presentation.dto.CartaoCreditoDto;
 import com.crossover.petitosa.presentation.dto.ContaBancariaDto;
@@ -22,16 +23,13 @@ import java.math.RoundingMode;
 public class MoneyService {
 
     @Autowired
-    private CartaoCreditoService cartaoCreditoService;
-
-    @Autowired
     private ContaBancariaService contaBancariaService;
 
     @Autowired
     private PoderosasBankNetwork poderosasBankNetwork;
 
     @Autowired
-    private ServicoService servicoService;
+    private UsuarioService usuarioService;
 
     public void validarConta(ContaBancariaDto conta) {
         if (!poderosasBankNetwork.validarConta(conta))
@@ -49,13 +47,44 @@ public class MoneyService {
         ContaBancaria contaPetitosa = contaBancariaService.getContaPetitosa();
 
         // Paga o valor total para o petitosa
-        poderosasBankNetwork.pagar(servico.getValorTotal(), cartaoContratante, contaPetitosa);
-        log.info(servico.getContratante().getNome() + " pagou " + servico.getValorTotal() + " reais para o Petitosa");
+        poderosasBankNetwork.pagar(servico.getPrecoTotal(), cartaoContratante, contaPetitosa);
+        log.info("Contratante" + servico.getContratante().getNome() + " pagou " + servico.getPrecoTotal() + " reais para o Petitosa");
 
-        // Transfere o valor sem a taxa para o prestador
-        poderosasBankNetwork.transferir(servico.getValorSemTaxa(), contaPetitosa, contaPrestador);
-        BigDecimal taxa = servico.getValorTotal().subtract(servico.getValorSemTaxa());
-        log.info("Petitosa repassou " + servico.getValorSemTaxa() + " reais para o prestador "
-                + servico.getPrestador().getNome() + " e ficou com a taxa de " + taxa.setScale(2, RoundingMode.HALF_EVEN) + " reais");
+        // Se o contratante pagou taxa de desistência, desconta ela da 'taxa a pagar' do contratante
+        if (servico.getPrecoTaxaDesistencia().compareTo(BigDecimal.ZERO) > 0) {
+            Usuario usuarioContratante = servico.getContratante().getUsuario();
+            BigDecimal taxaDesistenciaSobrando = usuarioContratante.getTaxaDesistenciaAPagar()
+                    .subtract(servico.getPrecoTaxaDesistencia())
+                    .max(BigDecimal.ZERO)
+                    .setScale(2, RoundingMode.HALF_EVEN);
+            usuarioContratante.setTaxaDesistenciaAPagar(taxaDesistenciaSobrando);
+            usuarioContratante = usuarioService.save(usuarioContratante);
+            log.info("Contratante " + servico.getContratante().getNome() + " pagou " + servico.getPrecoTaxaDesistencia() + " como taxa de desistência");
+        }
+
+        BigDecimal valorServico = servico.getPrecoServico();
+
+        // Se o prestador possui taxa de desistência, desconta ela do valor de serviço
+        Usuario usuarioPrestador = servico.getPrestador().getUsuario();
+        if (usuarioPrestador.getTaxaDesistenciaAPagar().compareTo(BigDecimal.ZERO) > 0) {
+            BigDecimal taxaDesistenciaPaga = usuarioPrestador.getTaxaDesistenciaAPagar().min(valorServico);
+            BigDecimal taxaDesistenciaSobrando = usuarioPrestador.getTaxaDesistenciaAPagar()
+                    .subtract(taxaDesistenciaPaga)
+                    .max(BigDecimal.ZERO)
+                    .setScale(2, RoundingMode.HALF_EVEN);
+            valorServico = valorServico
+                    .subtract(taxaDesistenciaPaga)
+                    .max(BigDecimal.ZERO)
+                    .setScale(2, RoundingMode.HALF_EVEN);
+            usuarioPrestador.setTaxaDesistenciaAPagar(taxaDesistenciaSobrando);
+            usuarioPrestador = usuarioService.save(usuarioPrestador);
+            log.info("Prestador " + servico.getPrestador().getNome() + " deixou de ganhar " + taxaDesistenciaPaga + " devido à taxa de desistência");
+        }
+
+        // Transfere o valor de serviço para o prestador
+        if (valorServico.compareTo(BigDecimal.ZERO) > 0) {
+            poderosasBankNetwork.transferir(valorServico, contaPetitosa, contaPrestador);
+            log.info("Petitosa repassou " + valorServico + " reais para o prestador " + servico.getPrestador().getNome());
+        }
     }
 }

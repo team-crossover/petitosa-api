@@ -53,8 +53,9 @@ public class ServicoController {
 
     @GetMapping("/api/v1/servicos/{idServico}/desistir")
     @ApiOperation("Desiste de um serviço pendente ou aceito e o retorna")
-    private ServicoDto desistir(@PathVariable("idServico") Long idServico) {
-        return servicoService.desistir(idServico);
+    private ServicoDto desistir(@PathVariable("idServico") Long idServico,
+                                @RequestParam(name = "idUsuario", required = true) Integer idUsuario) {
+        return servicoService.desistir(idUsuario, idServico);
     }
 
     @GetMapping("/api/v1/servicos/{idServico}/iniciar")

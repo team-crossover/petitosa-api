@@ -42,11 +42,19 @@ public class Servico {
 
     @NotNull
     @Min(0)
-    private BigDecimal valorSemTaxa;
+    private BigDecimal precoServico;
 
     @NotNull
     @Min(0)
-    private BigDecimal valorTotal;
+    private BigDecimal precoTaxaPetitosa;
+
+    @NotNull
+    @Min(0)
+    private BigDecimal precoTaxaDesistencia;
+
+    @NotNull
+    @Min(0)
+    private BigDecimal precoTotal;
 
     @NotNull
     private LocalDateTime dataSolicitacao;
@@ -63,6 +71,9 @@ public class Servico {
     private LocalDateTime dataInicioRealizacao;
 
     private LocalDateTime dataTerminoRealizacao;
+
+    @OneToOne
+    private Usuario usuarioDesistente;
 
     @NotNull
     private StatusServico status;

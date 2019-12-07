@@ -7,6 +7,7 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.*;
 
 import javax.persistence.ElementCollection;
+import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.math.BigDecimal;
@@ -40,7 +41,20 @@ public class ServicoDto {
     private String observacoes;
 
     @NotNull
-    private BigDecimal valorTotal;
+    @Min(0)
+    private BigDecimal precoServico;
+
+    @NotNull
+    @Min(0)
+    private BigDecimal precoTaxaPetitosa;
+
+    @NotNull
+    @Min(0)
+    private BigDecimal precoTaxaDesistencia;
+
+    @NotNull
+    @Min(0)
+    private BigDecimal precoTotal;
 
     @NotNull
     @JsonFormat(pattern = "HH:mm dd/MM/yyyy")
@@ -93,7 +107,10 @@ public class ServicoDto {
                 .nomePrestador(servico.getPrestador().getNome())
                 .enderecoEsperado(EnderecoDto.fromEndereco(servico.getEnderecoServico()))
                 .observacoes(servico.getObservacoes())
-                .valorTotal(servico.getValorTotal())
+                .precoServico(servico.getPrecoServico())
+                .precoTaxaPetitosa(servico.getPrecoTaxaPetitosa())
+                .precoTaxaDesistencia(servico.getPrecoTaxaDesistencia())
+                .precoTotal(servico.getPrecoTotal())
                 .dataSolicitacao(servico.getDataSolicitacao())
                 .dataAceitacao(servico.getDataAceitacao())
                 .dataRejeicao(servico.getDataRejeicao())

@@ -75,6 +75,9 @@ public class InitialDataLoader implements ApplicationListener<ContextRefreshedEv
     }
 
     private void createInitialUsers() {
+        if (usuarioService.findByEmail("c@c.com") != null)
+            return;
+
         NovoEnderecoDto novoEnderecoDto = NovoEnderecoDto.builder()
                 .cep(74303360)
                 .logradouro("Rua C 95")

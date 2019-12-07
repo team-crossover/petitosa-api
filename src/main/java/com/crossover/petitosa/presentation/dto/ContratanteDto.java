@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Data
@@ -53,6 +54,8 @@ public class ContratanteDto {
     @ApiModelProperty(notes = "Os resumos dos últimos 10 serviços contratados por este contratante")
     private ResumoServicoDto[] ultimosServicos;
 
+    private BigDecimal taxaDesistenciaAPagar;
+
     public static ContratanteDto fromContratante(Contratante contratante) {
         return ContratanteDto.builder()
                 .id(contratante.getId())
@@ -71,6 +74,7 @@ public class ContratanteDto {
                         .limit(10)
                         .map(ResumoServicoDto::fromServico)
                         .toArray(ResumoServicoDto[]::new))
+                .taxaDesistenciaAPagar(contratante.getUsuario().getTaxaDesistenciaAPagar())
                 .build();
     }
 

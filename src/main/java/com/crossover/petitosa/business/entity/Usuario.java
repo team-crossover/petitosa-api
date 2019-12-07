@@ -8,6 +8,7 @@ import javax.persistence.*;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
+import java.math.BigDecimal;
 
 @Data
 @Builder
@@ -32,6 +33,10 @@ public class Usuario {
 
     @NotNull
     private RoleUsuario role;
+
+    @Builder.Default
+    @NotNull
+    private BigDecimal taxaDesistenciaAPagar = BigDecimal.ZERO;
 
     // -----------
 
