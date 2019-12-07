@@ -37,6 +37,11 @@ public class ResumoServicoDto {
     @ApiModelProperty(example = "23:59 31/12/1998")
     private LocalDateTime dataSolicitacao;
 
+    @NotNull
+    @JsonFormat(pattern = "HH:mm dd/MM/yyyy")
+    @ApiModelProperty(example = "23:59 31/12/1998")
+    private LocalDateTime dataTermino;
+
     @Builder.Default
     @NotNull
     @Size(min = 1)
@@ -54,6 +59,7 @@ public class ResumoServicoDto {
                 .idPrestador(servico.getPrestador().getId())
                 .nomePrestador(servico.getPrestador().getNome())
                 .dataSolicitacao(servico.getDataSolicitacao())
+                .dataTermino(servico.getDataTerminoRealizacao())
                 .servicosPorAnimais(servico.getServicosPorAnimais().stream().map(ServicosPorAnimalDto::fromServicosPorAnimal).toArray(ServicosPorAnimalDto[]::new))
                 .avaliacao(servico.getAvaliacao() == null ? null : AvaliacaoDto.fromAvaliacao(servico.getAvaliacao()))
                 .build();
