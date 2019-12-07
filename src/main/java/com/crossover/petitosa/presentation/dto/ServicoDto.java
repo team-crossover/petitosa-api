@@ -7,7 +7,6 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.*;
 
 import javax.persistence.ElementCollection;
-import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.math.BigDecimal;
@@ -40,28 +39,16 @@ public class ServicoDto {
     @Size(max = 500)
     private String observacoes;
 
-    @NotNull
-    @Min(0)
     private BigDecimal precoServico;
 
-    @NotNull
-    @Min(0)
     private BigDecimal precoTaxaPetitosa;
 
-    @NotNull
-    @Min(0)
     private BigDecimal precoTotal;
 
-    @NotNull
-    @Min(0)
     private BigDecimal valorRecebidoPeloPrestador;
 
-    @NotNull
-    @Min(0)
     private BigDecimal taxaDesistenciaPagaPeloContratante;
 
-    @NotNull
-    @Min(0)
     private BigDecimal taxaDesistenciaAdicionadaAoPrestador;
 
     @NotNull
