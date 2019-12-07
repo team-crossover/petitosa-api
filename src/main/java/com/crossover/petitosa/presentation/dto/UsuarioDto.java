@@ -33,8 +33,6 @@ public class UsuarioDto {
     @ApiModelProperty(example = "CONTRATANTE", allowableValues = "CONTRATANTE, PRESTADOR")
     private RoleUsuario role;
 
-    private BigDecimal taxaDesistenciaAPagar;
-
     public static UsuarioDto fromUsuario(Usuario usuario) {
         return UsuarioDto.builder()
                 .id(usuario.getId())
@@ -42,7 +40,6 @@ public class UsuarioDto {
                 .idContratante(usuario.getContratante() == null ? null : usuario.getContratante().getId())
                 .idPrestador(usuario.getPrestador() == null ? null : usuario.getPrestador().getId())
                 .role(usuario.getRole())
-                .taxaDesistenciaAPagar(usuario.getTaxaDesistenciaAPagar())
                 .build();
     }
 

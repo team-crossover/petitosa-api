@@ -46,10 +46,6 @@ public class PrestadorEncontradoDto {
 
     @NotNull
     @Min(0)
-    private BigDecimal precoTaxaDesistencia;
-
-    @NotNull
-    @Min(0)
     private BigDecimal precoTotal;
 
 }

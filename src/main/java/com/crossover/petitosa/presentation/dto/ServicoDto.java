@@ -50,11 +50,19 @@ public class ServicoDto {
 
     @NotNull
     @Min(0)
-    private BigDecimal precoTaxaDesistencia;
+    private BigDecimal precoTotal;
 
     @NotNull
     @Min(0)
-    private BigDecimal precoTotal;
+    private BigDecimal valorRecebidoPeloPrestador;
+
+    @NotNull
+    @Min(0)
+    private BigDecimal taxaDesistenciaPagaPeloContratante;
+
+    @NotNull
+    @Min(0)
+    private BigDecimal taxaDesistenciaAdicionadaAoPrestador;
 
     @NotNull
     @JsonFormat(pattern = "HH:mm dd/MM/yyyy")
@@ -109,8 +117,10 @@ public class ServicoDto {
                 .observacoes(servico.getObservacoes())
                 .precoServico(servico.getPrecoServico())
                 .precoTaxaPetitosa(servico.getPrecoTaxaPetitosa())
-                .precoTaxaDesistencia(servico.getPrecoTaxaDesistencia())
                 .precoTotal(servico.getPrecoTotal())
+                .valorRecebidoPeloPrestador(servico.getValorRecebidoPeloPrestador())
+                .taxaDesistenciaPagaPeloContratante(servico.getTaxaDesistenciaPagaPeloContratante())
+                .taxaDesistenciaAdicionadaAoPrestador(servico.getTaxaDesistenciaAdicionadaAoPrestador())
                 .dataSolicitacao(servico.getDataSolicitacao())
                 .dataAceitacao(servico.getDataAceitacao())
                 .dataRejeicao(servico.getDataRejeicao())

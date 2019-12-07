@@ -57,6 +57,18 @@ public class Servico {
     private BigDecimal precoTotal;
 
     @NotNull
+    @Min(0)
+    private BigDecimal valorRecebidoPeloPrestador;
+
+    @NotNull
+    @Min(0)
+    private BigDecimal taxaDesistenciaPagaPeloContratante;
+
+    @NotNull
+    @Min(0)
+    private BigDecimal taxaDesistenciaAdicionadaAoPrestador;
+
+    @NotNull
     private LocalDateTime dataSolicitacao;
 
     private LocalDateTime dataAceitacao;
@@ -71,9 +83,6 @@ public class Servico {
     private LocalDateTime dataInicioRealizacao;
 
     private LocalDateTime dataTerminoRealizacao;
-
-    @OneToOne
-    private Usuario usuarioDesistente;
 
     @NotNull
     private StatusServico status;

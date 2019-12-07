@@ -34,10 +34,6 @@ public class Usuario {
     @NotNull
     private RoleUsuario role;
 
-    @Builder.Default
-    @NotNull
-    private BigDecimal taxaDesistenciaAPagar = BigDecimal.ZERO;
-
     // -----------
 
     @JsonIgnore

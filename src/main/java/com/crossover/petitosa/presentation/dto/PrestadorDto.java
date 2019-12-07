@@ -98,7 +98,7 @@ public class PrestadorDto {
                         .limit(10)
                         .map(ResumoServicoDto::fromServico)
                         .toArray(ResumoServicoDto[]::new))
-                .taxaDesistenciaAPagar(prestador.getUsuario().getTaxaDesistenciaAPagar())
+                .taxaDesistenciaAPagar(prestador.getTaxaDesistenciaAPagar())
                 .build();
     }
 

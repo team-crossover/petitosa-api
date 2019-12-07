@@ -62,6 +62,10 @@ public class Prestador {
     @OneToOne(orphanRemoval = true)
     private ContaBancaria contaBancaria;
 
+    @Builder.Default
+    @NotNull
+    private BigDecimal taxaDesistenciaAPagar = BigDecimal.ZERO;
+
     // ------------
 
     @Builder.Default

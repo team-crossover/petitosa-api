@@ -21,14 +21,12 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+import static com.crossover.petitosa.business.service.MoneyService.TAXA_PETITOSA;
+
 @Log4j2
 @Service
 @Transactional
 public class ServicoService extends CrudService<Servico, Long, ServicoRepository> {
-
-    public static final BigDecimal TAXA_PETITOSA = new BigDecimal("0.25");
-
-    public static final BigDecimal TAXA_DESISTENCIA = new BigDecimal("8.00");
 
     @Autowired
     private UsuarioService usuarioService;
@@ -76,8 +74,7 @@ public class ServicoService extends CrudService<Servico, Long, ServicoRepository
 
             BigDecimal precoServico = calcularPrecoTodosServicos(p, filtroServicoDto.getServicosPorAnimais()).setScale(2, RoundingMode.HALF_EVEN);
             BigDecimal precoTaxaPetitosa = calcularTaxaPetitosa(precoServico).setScale(2, RoundingMode.HALF_EVEN);
-            BigDecimal precoTaxaDesistencia = contratante.getUsuario().getTaxaDesistenciaAPagar().setScale(2, RoundingMode.HALF_EVEN);
-            BigDecimal precoTotal = precoServico.add(precoTaxaPetitosa).add(precoTaxaDesistencia).setScale(2, RoundingMode.HALF_EVEN);
+            BigDecimal precoTotal = precoServico.add(precoTaxaPetitosa).setScale(2, RoundingMode.HALF_EVEN);
 
             // Evita prestadores cujo preço total é acima do máximo
             if (filtroServicoDto.getPrecoTotalMaximo() != null && precoTotal.compareTo(filtroServicoDto.getPrecoTotalMaximo()) > 0)
@@ -99,7 +96,6 @@ public class ServicoService extends CrudService<Servico, Long, ServicoRepository
                     .imgPerfil(p.getImgPerfil())
                     .precoServico(precoServico)
                     .precoTaxaPetitosa(precoTaxaPetitosa)
-                    .precoTaxaDesistencia(precoTaxaDesistencia)
                     .precoTotal(precoTotal)
                     .build());
         }
@@ -135,8 +131,7 @@ public class ServicoService extends CrudService<Servico, Long, ServicoRepository
 
         BigDecimal precoServico = calcularPrecoTodosServicos(prestador, solicitacaoServicoDto.getServicosPorAnimais()).setScale(2, RoundingMode.HALF_EVEN);
         BigDecimal precoTaxaPetitosa = calcularTaxaPetitosa(precoServico).setScale(2, RoundingMode.HALF_EVEN);
-        BigDecimal precoTaxaDesistencia = contratante.getUsuario().getTaxaDesistenciaAPagar().setScale(2, RoundingMode.HALF_EVEN);
-        BigDecimal precoTotal = precoServico.add(precoTaxaPetitosa).add(precoTaxaDesistencia).setScale(2, RoundingMode.HALF_EVEN);
+        BigDecimal precoTotal = precoServico.add(precoTaxaPetitosa).setScale(2, RoundingMode.HALF_EVEN);
 
         Servico servico = Servico.builder()
                 .contratante(contratante)
@@ -145,7 +140,6 @@ public class ServicoService extends CrudService<Servico, Long, ServicoRepository
                 .observacoes(solicitacaoServicoDto.getObservacoes())
                 .precoServico(precoServico)
                 .precoTaxaPetitosa(precoTaxaPetitosa)
-                .precoTaxaDesistencia(precoTaxaDesistencia)
                 .precoTotal(precoTotal)
                 .dataSolicitacao(LocalDateTime.now())
                 .dataEsperadaRealizacao(solicitacaoServicoDto.getDataEsperada())
@@ -206,17 +200,18 @@ public class ServicoService extends CrudService<Servico, Long, ServicoRepository
         if (servico.getStatus() != StatusServico.PENDENTE && servico.getStatus() != StatusServico.ACEITO)
             throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Só pode desistir de serviços pendentes ou aceitos");
 
-        // Adiciona a taxa de desistência caso o serviço já tenha sido aceito anteriormente
+        // Processa as taxas de desistência
         if (servico.getStatus() == StatusServico.ACEITO) {
-            usuario.setTaxaDesistenciaAPagar(usuario.getTaxaDesistenciaAPagar().add(TAXA_DESISTENCIA).setScale(2, RoundingMode.HALF_EVEN));
-            usuario = usuarioService.save(usuario);
+            if (usuario.getRole() == RoleUsuario.CONTRATANTE) {
+                servico = moneyService.processarDesistenciaServicoPorContratante(servico);
+            } else {
+                servico = moneyService.processarDesistenciaServicoPorPrestador(servico);
+            }
         }
 
-        servico.setUsuarioDesistente(usuario);
         servico.setStatus(StatusServico.DESISTIDO);
         servico.setDataDesistencia(LocalDateTime.now());
         save(servico);
-
         return ServicoDto.fromServico(servico);
     }
 
@@ -243,8 +238,7 @@ public class ServicoService extends CrudService<Servico, Long, ServicoRepository
         if (servico.getStatus() != StatusServico.EM_ANDAMENTO)
             throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Só pode terminar realização de serviços em andamento");
 
-        moneyService.processarPagamentoServico(servico);
-
+        servico = moneyService.processarPagamentoServico(servico);
         servico.setStatus(StatusServico.TERMINADO);
         servico.setDataTerminoRealizacao(LocalDateTime.now());
         save(servico);
