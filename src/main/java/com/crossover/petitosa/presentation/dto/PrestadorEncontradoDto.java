@@ -37,7 +37,19 @@ public class PrestadorEncontradoDto {
     private Double distancia;
 
     @NotNull
-    @ApiModelProperty(example = "59.90")
+    @Min(0)
+    private BigDecimal precoServico;
+
+    @NotNull
+    @Min(0)
+    private BigDecimal precoTaxaPetitosa;
+
+    @NotNull
+    @Min(0)
+    private BigDecimal precoTaxaDesistencia;
+
+    @NotNull
+    @Min(0)
     private BigDecimal precoTotal;
 
 }

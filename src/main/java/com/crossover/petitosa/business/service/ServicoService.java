@@ -97,6 +97,9 @@ public class ServicoService extends CrudService<Servico, Long, ServicoRepository
                     .distancia(distancia)
                     .idPrestador(p.getId())
                     .imgPerfil(p.getImgPerfil())
+                    .precoServico(precoServico)
+                    .precoTaxaPetitosa(precoTaxaPetitosa)
+                    .precoTaxaDesistencia(precoTaxaDesistencia)
                     .precoTotal(precoTotal)
                     .build());
         }
