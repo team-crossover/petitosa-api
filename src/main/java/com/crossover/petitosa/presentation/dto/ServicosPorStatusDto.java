@@ -6,10 +6,7 @@ import lombok.*;
 
 import javax.persistence.ElementCollection;
 import javax.validation.constraints.NotNull;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Data
 @Builder
@@ -57,12 +54,12 @@ public class ServicosPorStatusDto {
             statusToServico.get(servico.getStatus()).add(ServicoDto.fromServico(servico));
 
         return ServicosPorStatusDto.builder()
-                .pendentes(statusToServico.get(StatusServico.PENDENTE).toArray(new ServicoDto[0]))
-                .aceitos(statusToServico.get(StatusServico.ACEITO).toArray(new ServicoDto[0]))
-                .emAndamento(statusToServico.get(StatusServico.EM_ANDAMENTO).toArray(new ServicoDto[0]))
-                .terminados(statusToServico.get(StatusServico.TERMINADO).toArray(new ServicoDto[0]))
-                .rejeitados(statusToServico.get(StatusServico.REJEITADO).toArray(new ServicoDto[0]))
-                .desistidos(statusToServico.get(StatusServico.DESISTIDO).toArray(new ServicoDto[0]))
+                .pendentes(statusToServico.get(StatusServico.PENDENTE).stream().sorted(Comparator.comparing(ServicoDto::getDataSolicitacao).reversed()).toArray(ServicoDto[]::new))
+                .aceitos(statusToServico.get(StatusServico.ACEITO).stream().sorted(Comparator.comparing(ServicoDto::getDataAceitacao).reversed()).toArray(ServicoDto[]::new))
+                .emAndamento(statusToServico.get(StatusServico.EM_ANDAMENTO).stream().sorted(Comparator.comparing(ServicoDto::getDataInicioRealizacao).reversed()).toArray(ServicoDto[]::new))
+                .terminados(statusToServico.get(StatusServico.TERMINADO).stream().sorted(Comparator.comparing(ServicoDto::getDataTerminoRealizacao).reversed()).toArray(ServicoDto[]::new))
+                .rejeitados(statusToServico.get(StatusServico.REJEITADO).stream().sorted(Comparator.comparing(ServicoDto::getDataRejeicao).reversed()).toArray(ServicoDto[]::new))
+                .desistidos(statusToServico.get(StatusServico.DESISTIDO).stream().sorted(Comparator.comparing(ServicoDto::getDataDesistencia).reversed()).toArray(ServicoDto[]::new))
                 .build();
     }
 
