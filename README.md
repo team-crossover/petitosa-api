@@ -1,5 +1,5 @@
 # Petitosa API
-Back-end da API Rest da plataforma [Petitosa](https://github.com/team-crossover/petitosa-web).
+Back-end da API Rest da plataforma [Petitosa](https://github.com/team-crossover/petitosa).
 
 Trabalho feito para disciplina de Engenharia Econômica de Software, do semestre 2019-2 do curso de graduação em Engenharia de Software da Universidade Federal de Goiás.
 
